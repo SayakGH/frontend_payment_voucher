@@ -6,11 +6,12 @@ import Manage from "./Manage";
 
 export default function Dashboard() {
   const { page } = useGlobal();
+  const role = localStorage.getItem("role");
   return (
     <div className="p-2">
-      {page === "analytics" && <Analytics />}
+      {page === "analytics" && role == "admin" && <Analytics />}
       {page === "invoices" && <Invoices />}
-      {page === "manage" && <Manage />}
+      {page === "manage" && role == "admin" && <Manage />}
     </div>
   );
 }

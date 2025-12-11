@@ -1,37 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { loginUser } from "@/api/auth";
+import type { IAuthResponse } from "@/types/authType";
+
+import { toast } from "sonner";
+import { CheckCircle, XCircle } from "lucide-react";
+
 export default function Login() {
   const navigate = useNavigate();
 
-  // State for email & password
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) navigate("/dashboard");
+  }, [navigate]);
+
+  // Form state
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Handle login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     setLoading(true);
 
-    // Fake API call (1.2 sec delay)
-    setTimeout(() => {
-      // Save auth token
-      localStorage.setItem("authToken", "loggedin");
+    try {
+      // Call backend API
+      const data: IAuthResponse = await loginUser(email, password);
 
-      // Save user role
-      localStorage.setItem("role", "admin");
+      // Store token + role
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("role", data.user.role);
 
-      // Redirect to dashboard
+      // Success toast
+      toast.custom((t: any) => (
+        <div
+          className={`${
+            t.visible
+              ? "animate-in fade-in slide-in-from-top-5"
+              : "animate-out fade-out"
+          } w-full max-w-sm bg-green-50 border border-green-300 text-green-800 rounded-xl shadow-md p-4 flex gap-3`}
+        >
+          <CheckCircle className="w-6 h-6 text-green-600 mt-1" />
+
+          <div className="flex-1">
+            <p className="font-semibold text-green-700">Login Successful 🎉</p>
+            <p className="text-sm text-green-600">Welcome back!</p>
+          </div>
+        </div>
+      ));
+
+      // Redirect user
       navigate("/dashboard");
+    } catch (err: any) {
+      // Extract backend message
+      const errorMessage =
+        err?.response?.data?.message ||
+        "Login failed. Please check your credentials.";
 
+      // Error toast
+      toast.custom((t: any) => (
+        <div
+          className={`${
+            t.visible
+              ? "animate-in fade-in slide-in-from-top-5"
+              : "animate-out fade-out"
+          } w-full max-w-sm bg-red-50 border border-red-300 text-red-800 rounded-xl shadow-md p-4 flex gap-3`}
+        >
+          <XCircle className="w-6 h-6 text-red-600 mt-1" />
+
+          <div className="flex-1">
+            <p className="font-semibold text-red-700">Login Failed</p>
+            <p className="text-sm text-red-600">{errorMessage}</p>
+          </div>
+        </div>
+      ));
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -45,6 +97,7 @@ export default function Login() {
 
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Email Field */}
             <div>
               <label className="text-sm font-medium">Email</label>
               <Input
@@ -57,6 +110,7 @@ export default function Login() {
               />
             </div>
 
+            {/* Password Field */}
             <div>
               <label className="text-sm font-medium">Password</label>
               <Input
@@ -69,7 +123,8 @@ export default function Login() {
               />
             </div>
 
-            <Button className="w-full mt-2" disabled={loading}>
+            {/* Login Button */}
+            <Button className="w-full mt-2" disabled={loading} type="submit">
               {loading ? "Logging in..." : "Login"}
             </Button>
 

@@ -8,6 +8,7 @@ import { useGlobal } from "@/context/GlobalContext";
 export default function MobileSidebar() {
   const { setPage } = useGlobal();
   const [open, setOpen] = useState(false);
+  const role = localStorage.getItem("role");
 
   const handleSelect = (page: string) => {
     setPage(page);
@@ -26,13 +27,15 @@ export default function MobileSidebar() {
         <h1 className="text-xl font-semibold mb-6">Menu</h1>
 
         <div className="space-y-3">
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            onClick={() => handleSelect("analytics")}
-          >
-            Analytics
-          </Button>
+          {role === "admin" && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => handleSelect("analytics")}
+            >
+              Analytics
+            </Button>
+          )}
 
           <Button
             variant="ghost"
@@ -41,14 +44,15 @@ export default function MobileSidebar() {
           >
             Invoices
           </Button>
-
-          <Button
-            variant="ghost"
-            className="w-full justify-start"
-            onClick={() => handleSelect("manage")}
-          >
-            Manage
-          </Button>
+          {role === "admin" && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => handleSelect("manage")}
+            >
+              Manage
+            </Button>
+          )}
         </div>
       </SheetContent>
     </Sheet>

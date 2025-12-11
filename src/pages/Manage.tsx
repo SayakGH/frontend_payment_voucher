@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,51 +9,139 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { deleteUser, getAllUsersExceptAdmin, registerUser } from "@/api/users";
+import type {
+  IDeleteUserResponse,
+  IGetAllUsersResponse,
+  IUser,
+} from "@/types/userType";
+import type { IAuthResponse } from "@/types/authType";
+import { toast } from "sonner";
+import { XCircle } from "lucide-react"; // optional, for icon in error toast
 
 export default function Manage() {
-  const [employees, setEmployees] = useState([
-    {
-      id: 1,
-      name: "Rahul Sharma",
-      email: "rahul@example.com",
-      password: "1234",
-    },
-    {
-      id: 2,
-      name: "Priya Verma",
-      email: "priya@example.com",
-      password: "abcd",
-    },
-  ]);
+  const [employees, setEmployees] = useState<IUser[]>([]);
+
+  const fetchUsers = async () => {
+    const data: IGetAllUsersResponse = await getAllUsersExceptAdmin();
+    setEmployees(data.users);
+  };
+
+  const addUsers = async (email: string, password: string) => {
+    await registerUser(email, password);
+  };
+
+  const deleteUsers = async (
+    _id: string,
+    email: string,
+    role: "user" | "admin"
+  ) => {
+    const data: IDeleteUserResponse = await deleteUser(_id, email, role);
+    return data;
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const [search, setSearch] = useState("");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [open, setOpen] = useState(false);
 
-  const addEmployee = () => {
-    if (!name.trim() || !email.trim() || !password.trim()) return;
+  const addEmployee = async () => {
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      toast.custom((t: any) => (
+        <div
+          className={`${
+            t.visible
+              ? "animate-in fade-in slide-in-from-top-5"
+              : "animate-out fade-out"
+          } w-full max-w-sm bg-red-50 border border-red-300 text-red-800 rounded-xl shadow-md p-4 flex gap-3`}
+        >
+          <XCircle className="w-6 h-6 text-red-600 mt-1" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-700">Missing fields</p>
+            <p className="text-sm text-red-600">
+              Please fill in name, email and password.
+            </p>
+          </div>
+        </div>
+      ));
+      return;
+    }
 
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      password,
-    };
+    try {
+      await addUsers(email, password); // your API call
+      await fetchUsers(); // refresh list
+      // ✅ No success toast as requested
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message || "Failed to add employee.";
 
-    setEmployees([...employees, newUser]);
-    setName("");
-    setEmail("");
-    setPassword("");
+      // ❌ Custom Tailwind error toast
+      toast.custom((t: any) => (
+        <div
+          className={`${
+            t.visible
+              ? "animate-in fade-in slide-in-from-top-5"
+              : "animate-out fade-out"
+          } w-full max-w-sm bg-red-50 border border-red-300 text-red-800 rounded-xl shadow-md p-4 flex gap-3`}
+        >
+          <XCircle className="w-6 h-6 text-red-600 mt-1" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-700">Failed to add employee</p>
+            <p className="text-sm text-red-600">{errorMessage}</p>
+          </div>
+        </div>
+      ));
+    } finally {
+      // ✅ Always close the dialog, regardless of success/error
+      setOpen(false);
+
+      // Optional: clear form fields
+      setName("");
+      setEmail("");
+      setPassword("");
+    }
   };
 
-  const deleteEmployee = (id: number) => {
-    setEmployees(employees.filter((emp) => emp.id !== id));
+  const deleteEmployee = async (
+    id: string,
+    email: string,
+    role: "user" | "admin"
+  ) => {
+    try {
+      const data: IDeleteUserResponse = await deleteUsers(id, email, role);
+      if (data.success === false) {
+        toast.custom((t: any) => (
+          <div
+            className={`${
+              t.visible
+                ? "animate-in fade-in slide-in-from-top-5"
+                : "animate-out fade-out"
+            } w-full max-w-sm bg-red-50 border border-red-300 text-red-800 rounded-xl shadow-md p-4 flex gap-3`}
+          >
+            <XCircle className="w-6 h-6 text-red-600 mt-1" />
+            <div className="flex-1">
+              <p className="font-semibold text-red-700">
+                Failed to add employee
+              </p>
+              <p className="text-sm text-red-600">{data.message}</p>
+            </div>
+          </div>
+        ));
+      }
+      await fetchUsers();
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+    }
   };
 
   const filteredEmployees = employees.filter((emp) =>
-    emp.name.toLowerCase().includes(search.toLowerCase())
+    emp.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -73,7 +161,7 @@ export default function Manage() {
         </div>
 
         {/* Add Employee Button (opens modal) */}
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="w-full md:w-auto">Add Employee</Button>
           </DialogTrigger>
@@ -139,20 +227,20 @@ export default function Manage() {
             <div className="space-y-4">
               {filteredEmployees.map((emp) => (
                 <div
-                  key={emp.id}
+                  key={emp._id}
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg bg-white gap-2"
                 >
                   {/* Employee Info */}
                   <div className="flex flex-col">
-                    <p className="font-semibold text-lg">{emp.name}</p>
-                    <p className="text-gray-600 text-sm">{emp.email}</p>
+                    <p className="font-semibold text-lg">{emp.email}</p>
+                    {/* <p className="text-gray-600 text-sm"></p> */}
                   </div>
 
                   {/* Delete Button */}
                   <Button
                     variant="destructive"
                     className="w-full sm:w-auto"
-                    onClick={() => deleteEmployee(emp.id)}
+                    onClick={() => deleteEmployee(emp._id, emp.email, emp.role)}
                   >
                     Delete
                   </Button>
