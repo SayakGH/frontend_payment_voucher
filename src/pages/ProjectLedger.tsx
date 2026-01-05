@@ -19,6 +19,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Receipt } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* ================= Utils ================= */
 
@@ -66,6 +76,8 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
     { description: "", amount: 0 },
   ]);
   const [gstPercent, setGstPercent] = useState(0);
+  const [deleteBillId, setDeleteBillId] = useState<string | null>(null);
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
 
   /* ================= Load Ledger ================= */
 
@@ -176,13 +188,20 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
     `${formatDate(iso)} ${formatTime(iso)}`;
 
   const updatePayItem = (
-    i: number,
-    field: "description" | "amount",
-    value: any
+    index: number,
+    field: keyof PayItem,
+    value: string | number
   ) => {
-    const copy = [...payItems];
-    copy[i][field] = field === "amount" ? Number(value) : value;
-    setPayItems(copy);
+    setPayItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              [field]: field === "amount" ? Number(value) : String(value),
+            }
+          : item
+      )
+    );
   };
 
   const addPayItem = () => {
@@ -215,7 +234,8 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
 
   return (
     <div className="min-h-screen bg-muted/30 p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Desktop Header */}
+      <div className="hidden sm:flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Left side — breadcrumb */}
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <ArrowLeft
@@ -259,8 +279,44 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
           </div>
         </div>
       </div>
+      {/* Mobile Header */}
+      <div className="flex sm:hidden flex-col gap-4">
+        {/* Top Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <ArrowLeft className="w-4 h-4" onClick={onBack} />
+            <span className="font-medium truncate max-w-[180px]">
+              {project.projectName}
+            </span>
+          </div>
 
-      <div className="grid grid-cols-4 gap-4">
+          <div
+            className={`text-sm font-bold ${
+              balance > 0 ? "text-red-600" : "text-green-600"
+            }`}
+          >
+            {formatMoney(balance)}
+          </div>
+        </div>
+
+        {/* Vendor */}
+        <div className="text-xs text-muted-foreground">{vendor.name}</div>
+
+        {/* Actions */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button size="sm" variant="outline" onClick={() => setOpenBill(true)}>
+            <Plus className="w-4 h-4 mr-1" />
+            Add Bill
+          </Button>
+
+          <Button size="sm" onClick={() => setOpenPayment(true)}>
+            <CreditCard className="w-4 h-4 mr-1" />
+            Pay
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
         <Summary title="Billed" value={formatMoney(billed)} />
         <Summary title="Paid" value={formatMoney(paid)} green />
         <Summary title="Balance" value={formatMoney(balance)} danger />
@@ -296,7 +352,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                   </div>
                 )}
 
-                <div className="space-y-3">
+                <div className="hidden sm:block space-y-3">
                   {bills.map((b) => (
                     <div
                       key={b._id}
@@ -320,7 +376,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                           size="icon"
                           variant="ghost"
                           className="text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeleteBill(b._id)}
+                          onClick={() => setDeleteBillId(b._id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -328,10 +384,70 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                     </div>
                   ))}
                 </div>
+                <div className="sm:hidden space-y-3">
+                  {bills.map((b) => (
+                    <Card key={b._id} className="border shadow-sm">
+                      <CardContent className="p-4 space-y-3">
+                        {/* Description */}
+                        <div className="text-sm font-medium leading-snug line-clamp-2">
+                          {b.description}
+                        </div>
+
+                        {/* Date */}
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(b.createdAt)}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <Badge variant="secondary" className="text-sm">
+                            {formatMoney(b.amount)}
+                          </Badge>
+
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteBillId(b._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
+        <AlertDialog
+          open={!!deleteBillId}
+          onOpenChange={() => setDeleteBillId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Bill?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This bill will be permanently removed. This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => {
+                  if (deleteBillId) handleDeleteBill(deleteBillId);
+                  setDeleteBillId(null);
+                }}
+              >
+                Delete Bill
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* ================= PAYMENTS ================= */}
         <TabsContent value="payments">
@@ -350,7 +466,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                   </div>
                 )}
 
-                <div className="space-y-3">
+                <div className="hidden sm:block space-y-3">
                   {payments.map((p) => (
                     <div
                       key={p._id}
@@ -390,7 +506,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                           size="icon"
                           variant="ghost"
                           className="text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDeletePayment(p._id)}
+                          onClick={() => setDeletePaymentId(p._id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -398,11 +514,86 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                     </div>
                   ))}
                 </div>
+                <div className="sm:hidden space-y-3">
+                  {payments.map((p) => (
+                    <Card key={p._id} className="border shadow-sm">
+                      <CardContent className="p-4 space-y-3">
+                        {/* Date */}
+                        <div className="text-sm font-medium">
+                          {formatDateTime(p.createdAt)}
+                        </div>
+
+                        <div className="text-xs text-muted-foreground">
+                          Payment sent
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <Badge variant="secondary" className="text-sm">
+                            {formatMoney(p.total)}
+                          </Badge>
+
+                          <div className="flex gap-2">
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() =>
+                                window.open(
+                                  `/payment/${p._id}`,
+                                  "_blank",
+                                  "noopener,noreferrer"
+                                )
+                              }
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeletePaymentId(p._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </ScrollArea>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      <AlertDialog
+        open={!!deletePaymentId}
+        onOpenChange={() => setDeletePaymentId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This payment record will be removed permanently. This may affect
+              balances and reports.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (deletePaymentId) handleDeletePayment(deletePaymentId);
+                setDeletePaymentId(null);
+              }}
+            >
+              Delete Payment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Bill Modal */}
       <Dialog open={openBill} onOpenChange={setOpenBill}>
