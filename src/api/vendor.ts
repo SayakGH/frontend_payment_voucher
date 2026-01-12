@@ -215,3 +215,48 @@ export const getPaymentbyId = async (id: string) => {
 
   return res.data;
 };
+export const createPaymentv2 = async (payload: any) => {
+  const token = localStorage.getItem("authToken");
+
+  const res = await api.post<ICreatePaymentResponse>(
+    "/vendors/create/payment/v2",
+    payload,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};
+
+export const getPaymentbyIdv2 = async (id: string) => {
+  const token = localStorage.getItem("authToken");
+
+  const res = await api.get<IGetPaymentsByProjectResponse>(
+    `/vendors/payments/vendor/${id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};
+
+export const deleteVendorv2 = async (vendorId: string) => {
+  const token = localStorage.getItem("authToken");
+
+  const res = await api.delete<IDeleteResponse>(
+    `/vendors/delete/vendor/payments/${vendorId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};

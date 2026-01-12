@@ -38,7 +38,7 @@ export default function AddProjectModal({
 }: AddProjectModalProps) {
   const [projectName, setProjectName] = useState("");
   const [companyName, setCompanyName] = useState<CompanyName | "">("");
-  const [estimatedPrice, setEstimatedPrice] = useState("");
+  const [estimatedPrice, setEstimatedPrice] = useState(0);
 
   const handleSubmit = () => {
     const price = Number(estimatedPrice);
@@ -49,7 +49,7 @@ export default function AddProjectModal({
 
     setProjectName("");
     setCompanyName("");
-    setEstimatedPrice("");
+    setEstimatedPrice(0);
     onClose();
   };
 
@@ -100,7 +100,7 @@ export default function AddProjectModal({
               min="0"
               placeholder="e.g. 2500000"
               value={estimatedPrice}
-              onChange={(e) => setEstimatedPrice(e.target.value)}
+              onChange={(e) => setEstimatedPrice(Number(e.target.value))}
             />
           </div>
         </div>

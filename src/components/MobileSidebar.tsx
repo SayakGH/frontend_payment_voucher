@@ -41,7 +41,7 @@ export default function MobileSidebar() {
             className="w-full justify-start"
             onClick={() => handleSelect("vendor")}
           >
-            Vendors
+            Beneficiaries
           </Button>
           {role === "admin" && (
             <Button

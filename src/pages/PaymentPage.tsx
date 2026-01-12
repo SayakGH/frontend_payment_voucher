@@ -79,7 +79,11 @@ const formatCurrency = (amount: number): string =>
     maximumFractionDigits: 2,
   })}`;
 
-const formatDate = (iso: string) => iso.split("T")[0];
+const formatDate = (iso: string) => {
+  const [year, month, day] = iso.split("T")[0].split("-");
+  return `${day}-${month}-${year}`;
+};
+
 const formatTime = (iso: string) => iso.split("T")[1].slice(0, 5);
 
 /* ===============================

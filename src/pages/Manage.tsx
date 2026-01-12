@@ -9,6 +9,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { deleteUser, getAllUsersExceptAdmin, registerUser } from "@/api/users";
 import type {
   IDeleteUserResponse,
@@ -20,6 +30,7 @@ import { XCircle } from "lucide-react";
 
 export default function Manage() {
   const [employees, setEmployees] = useState<IUser[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<IUser | null>(null);
 
   const fetchUsers = async () => {
     const data: IGetAllUsersResponse = await getAllUsersExceptAdmin();
@@ -44,7 +55,6 @@ export default function Manage() {
   }, []);
 
   const [search, setSearch] = useState("");
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,14 +83,12 @@ export default function Manage() {
     }
 
     try {
-      await addUsers(name, email, password); // your API call
-      await fetchUsers(); // refresh list
-      // ✅ No success toast as requested
+      await addUsers(name, email, password);
+      await fetchUsers();
     } catch (err: any) {
       const errorMessage =
         err?.response?.data?.message || "Failed to add employee.";
 
-      // ❌ Custom Tailwind error toast
       toast.custom((t: any) => (
         <div
           className={`${
@@ -97,45 +105,32 @@ export default function Manage() {
         </div>
       ));
     } finally {
-      // ✅ Always close the dialog, regardless of success/error
       setOpen(false);
-
-      // Optional: clear form fields
       setName("");
       setEmail("");
       setPassword("");
     }
   };
 
-  const deleteEmployee = async (
-    id: string,
-    email: string,
-    role: "user" | "admin"
-  ) => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
     try {
-      const data: IDeleteUserResponse = await deleteUsers(id, email, role);
+      const data: IDeleteUserResponse = await deleteUsers(
+        deleteTarget._id,
+        deleteTarget.email,
+        deleteTarget.role
+      );
+
       if (data.success === false) {
-        toast.custom((t: any) => (
-          <div
-            className={`${
-              t.visible
-                ? "animate-in fade-in slide-in-from-top-5"
-                : "animate-out fade-out"
-            } w-full max-w-sm bg-red-50 border border-red-300 text-red-800 rounded-xl shadow-md p-4 flex gap-3`}
-          >
-            <XCircle className="w-6 h-6 text-red-600 mt-1" />
-            <div className="flex-1">
-              <p className="font-semibold text-red-700">
-                Failed to add employee
-              </p>
-              <p className="text-sm text-red-600">{data.message}</p>
-            </div>
-          </div>
-        ));
+        toast.error(data.message);
       }
+
       await fetchUsers();
     } catch (error) {
       console.error("Error deleting employee:", error);
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -147,108 +142,104 @@ export default function Manage() {
     <div className="p-4 md:p-6 space-y-6">
       <h1 className="text-2xl font-bold">Manage Employees</h1>
 
-      {/* TOP BAR: Search + Add Button */}
+      {/* Search + Add */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Search Bar */}
         <div className="w-full md:w-1/2">
           <Input
             placeholder="Search employee by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full"
           />
         </div>
 
-        {/* Add Employee Button (opens modal) */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full md:w-auto">Add Employee</Button>
+            <Button>Add Employee</Button>
           </DialogTrigger>
 
-          <DialogContent className="max-w-sm w-[90%]">
+          <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>Add New Employee</DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-semibold">Full Name</label>
-                <Input
-                  placeholder="Enter full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold">Email</label>
-                <Input
-                  placeholder="Enter email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold">Password</label>
-                <Input
-                  placeholder="Enter password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-
-              <Button className="w-full mt-2" onClick={addEmployee}>
-                Save Employee
+              <Input
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Input
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Input
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button className="w-full" onClick={addEmployee}>
+                Save
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* EMPLOYEE LIST */}
-      <Card className="shadow-sm">
+      {/* Employees */}
+      <Card>
         <CardHeader>
           <CardTitle>Employees</CardTitle>
         </CardHeader>
+        <CardContent className="space-y-3">
+          {filteredEmployees.map((emp) => (
+            <div
+              key={emp._id}
+              className="flex justify-between items-center border rounded-lg p-4"
+            >
+              <div>
+                <p className="font-semibold">{emp.name}</p>
+                <p className="text-sm text-muted-foreground">{emp.email}</p>
+              </div>
 
-        <CardContent>
-          <div className="space-y-4">
-            {filteredEmployees.length === 0 && (
-              <p className="text-gray-500 text-sm">No employees found.</p>
-            )}
-
-            <div className="space-y-4">
-              {filteredEmployees.map((emp) => (
-                <div
-                  key={emp._id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg bg-white gap-2"
-                >
-                  {/* Employee Info */}
-                  <div className="flex flex-col">
-                    <p className="font-semibold text-lg">{emp.name}</p>
-                    <p className="text-gray-600 text-sm">{emp.email}</p>
-                  </div>
-
-                  {/* Delete Button */}
-                  <Button
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                    onClick={() => deleteEmployee(emp._id, emp.email, emp.role)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              ))}
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteTarget(emp)}
+              >
+                Delete
+              </Button>
             </div>
-          </div>
+          ))}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Employee?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove <strong>{deleteTarget?.name}</strong>
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={confirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -56,6 +56,7 @@ export default function VendorDetail({ vendor, onBack }: Props) {
       setLoading(false);
     }
   };
+  const role = localStorage.getItem("role");
 
   /* ================= Create Project ================= */
 
@@ -213,15 +214,17 @@ export default function VendorDetail({ vendor, onBack }: Props) {
                         View
                       </Button>
 
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="flex-1 flex items-center gap-2"
-                        onClick={() => setDeleteTarget(p)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </Button>
+                      {role === "admin" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1 flex items-center gap-2"
+                          onClick={() => setDeleteTarget(p)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

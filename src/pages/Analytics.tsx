@@ -93,8 +93,8 @@ export default function Analytics() {
       <h1 className="text-2xl font-bold">Analytics</h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Metric title="Total Payable" value={totalPayable} color="red" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* <Metric title="Total Payable" value={totalPayable} color="red" /> */}
         <Metric title="Total Paid" value={stats.totalPayments} color="green" />
         <Metric title="Total Billed" value={stats.totalBilled} />
         <Metric

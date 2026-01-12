@@ -5,6 +5,7 @@ export interface Vendor {
   address: string;
   pan: string;
   gstin?: string;
+  type?: "Vendor" | "Salary" | "Agent" | "Phone Bill" | "Rent" | "Other";
   createdAt: string;
 }
 
@@ -24,4 +25,5 @@ export interface CreateVendorPayload {
   address: string;
   pan: string;
   gstin?: string;
+  type: "Vendor" | "Salary" | "Agent" | "Phone Bill" | "Rent" | "Other";
 }

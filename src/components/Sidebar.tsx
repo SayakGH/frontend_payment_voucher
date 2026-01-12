@@ -23,7 +23,7 @@ export default function Sidebar() {
         className="w-full justify-start text-gray-300"
         onClick={() => setPage("vendor")}
       >
-        Vendors
+        Beneficiaries
       </Button>
       {role === "admin" && (
         <Button

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import AddVendorModal from "@/components/AddVendorModal";
 import VendorDetail from "./VendorDetails";
+import VendorPaymentLedger from "./VendorPaymentLedger";
 import {
   Table,
   TableBody,
@@ -22,21 +23,56 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 import type {
   CreateVendorPayload,
   IGetVendorsResponse,
   Vendor,
 } from "@/types/vendorTypes";
-import { createVendor, getAllVendors, deleteVendor } from "@/api/vendor";
+import {
+  createVendor,
+  getAllVendors,
+  deleteVendor,
+  deleteVendorv2,
+} from "@/api/vendor";
+
+type VendorType =
+  | "Vendor"
+  | "Salary"
+  | "Agent"
+  | "Phone Bill"
+  | "Rent"
+  | "Other";
 
 export default function Vendors() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteVendorId, setDeleteVendorId] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedOther, setSelectedOther] = useState<Vendor | null>(null);
+
+  const role = localStorage.getItem("role");
+
+  const vendorTypeBadge = (type?: VendorType) => {
+    if (!type) return <Badge variant="outline">Unknown</Badge>;
+
+    const map: Record<
+      VendorType,
+      "default" | "secondary" | "destructive" | "outline"
+    > = {
+      Vendor: "default",
+      Salary: "secondary",
+      Agent: "outline",
+      "Phone Bill": "secondary",
+      Rent: "default",
+      Other: "outline",
+    };
+
+    return <Badge variant={map[type]}>{type}</Badge>;
+  };
 
   /* ================= Load Vendors ================= */
 
@@ -71,21 +107,35 @@ export default function Vendors() {
   /* ================= Delete Vendor ================= */
 
   const handleDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteVendorId) return;
 
     try {
-      await deleteVendor(deleteId);
+      await deleteVendor(deleteVendorId._id);
 
       // Optimistic UI
-      setVendors((prev) => prev.filter((v) => v._id !== deleteId));
+      setVendors((prev) => prev.filter((v) => v._id !== deleteVendorId._id));
       toast.success("Vendor deleted");
     } catch {
       toast.error("Delete failed");
     } finally {
-      setDeleteId(null);
+      setDeleteVendorId(null);
     }
   };
 
+  const handleDeletev2 = async () => {
+    if (!deleteVendorId) return;
+
+    try {
+      await deleteVendorv2(deleteVendorId._id || "");
+      // Optimistic UI
+      setVendors((prev) => prev.filter((v) => v._id !== deleteVendorId._id));
+      toast.success("Vendor deleted");
+    } catch {
+      toast.error("Delete failed");
+    } finally {
+      setDeleteVendorId(null);
+    }
+  };
   /* ================= Search ================= */
 
   const filteredVendors = vendors.filter((v) =>
@@ -106,6 +156,16 @@ export default function Vendors() {
       </div>
     );
   }
+  if (selectedOther) {
+    return (
+      <div className="p-6">
+        <VendorPaymentLedger
+          vendor={selectedOther}
+          onBack={() => setSelectedOther(null)}
+        />
+      </div>
+    );
+  }
 
   /* ================= UI ================= */
 
@@ -114,9 +174,9 @@ export default function Vendors() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Vendors</h1>
+          <h1 className="text-2xl font-bold">Beneficiaries</h1>
           <p className="text-sm text-muted-foreground">
-            Manage contractors and suppliers
+            Manage vendors, salary, agents, phone bills and more.
           </p>
         </div>
         <Button onClick={() => setOpen(true)}>Add Vendor</Button>
@@ -134,9 +194,10 @@ export default function Vendors() {
       <div className="border rounded-xl bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table className="min-w-full">
-            <TableHeader className="bg-muted sticky top-0 z-10">
+            <TableHeader>
               <TableRow>
                 <TableHead>Vendor</TableHead>
+                <TableHead>Type</TableHead> {/* new */}
                 <TableHead className="hidden md:table-cell">Phone</TableHead>
                 <TableHead>PAN</TableHead>
                 <TableHead className="hidden sm:table-cell">GSTIN</TableHead>
@@ -179,6 +240,7 @@ export default function Vendors() {
                         </p>
                       </div>
                     </TableCell>
+                    <TableCell>{vendorTypeBadge(v.type)}</TableCell>
 
                     {/* Phone */}
                     <TableCell className="hidden md:table-cell">
@@ -198,18 +260,24 @@ export default function Vendors() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setSelectedVendor(v)}
+                        onClick={
+                          v.type === "Vendor"
+                            ? () => setSelectedVendor(v)
+                            : () => setSelectedOther(v)
+                        }
                       >
                         View
                       </Button>
 
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => setDeleteId(v._id)}
-                      >
-                        Delete
-                      </Button>
+                      {role === "admin" && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeleteVendorId(v)}
+                        >
+                          Delete
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -220,7 +288,10 @@ export default function Vendors() {
       </div>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteVendorId}
+        onOpenChange={() => setDeleteVendorId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Vendor?</AlertDialogTitle>
@@ -232,7 +303,15 @@ export default function Vendors() {
 
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={
+                deleteVendorId?.type === "Vendor"
+                  ? handleDelete
+                  : handleDeletev2
+              }
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

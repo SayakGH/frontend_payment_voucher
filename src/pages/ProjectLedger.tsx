@@ -78,6 +78,8 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
   const [gstPercent, setGstPercent] = useState(0);
   const [deleteBillId, setDeleteBillId] = useState<string | null>(null);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const role = localStorage.getItem("role");
+  const [paymentSearch, setPaymentSearch] = useState("");
 
   /* ================= Load Ledger ================= */
 
@@ -99,6 +101,19 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
     }
   };
 
+  const filteredPayments = payments.filter(
+    (p) =>
+      p._id.toLowerCase().includes(paymentSearch.toLowerCase()) ||
+      (p.company?.name || "—")
+        .toLowerCase()
+        .includes(paymentSearch.toLowerCase()) ||
+      formatMoney(p.total).includes(paymentSearch) ||
+      formatDateTime(p.createdAt).includes(paymentSearch) ||
+      (p.paymentSummary?.mode || "")
+        .toLowerCase()
+        .includes(paymentSearch.toLowerCase())
+  );
+
   /* ================= Totals ================= */
 
   const billed = bills.reduce((s, b) => s + b.amount, 0);
@@ -113,7 +128,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
   const itemsTotal = validItems.reduce((s, i) => s + i.amount, 0);
 
   const gstAmount = (itemsTotal * gstPercent) / 100;
-  const grandTotal = itemsTotal;
+  const grandTotal = itemsTotal + gstAmount;
 
   /* ================= Bill ================= */
 
@@ -181,7 +196,10 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
     }
   };
 
-  const formatDate = (iso: string) => iso.split("T")[0];
+  const formatDate = (iso: string) => {
+    const [year, month, day] = iso.split("T")[0].split("-");
+    return `${day}-${month}-${year}`;
+  };
   const formatTime = (iso: string) => iso.split("T")[1].slice(0, 5);
 
   const formatDateTime = (iso: string) =>
@@ -372,14 +390,16 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                           {formatMoney(b.amount)}
                         </Badge>
 
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeleteBillId(b._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {role === "Admin" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteBillId(b._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -457,17 +477,27 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                 Payments Made
               </CardTitle>
             </CardHeader>
+            <div className="mx-4 mb-4">
+              {" "}
+              {/* mx-4 adds horizontal margin, mb-4 adds bottom margin */}
+              <Input
+                placeholder="Search payments by mode, amount, date or company..."
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className="w-full"
+              />
+            </div>
 
             <CardContent className="pt-0">
               <ScrollArea className="h-[320px] pr-2">
-                {payments.length === 0 && (
+                {filteredPayments.length === 0 && (
                   <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
                     No payments recorded yet
                   </div>
                 )}
 
                 <div className="hidden sm:block space-y-3">
-                  {payments.map((p) => (
+                  {filteredPayments.map((p) => (
                     <div
                       key={p._id}
                       className="flex items-center justify-between rounded-lg border bg-white px-4 py-3 transition hover:bg-muted/40"
