@@ -69,12 +69,12 @@ export default function Analytics() {
       : 0;
   }, [chartData]);
 
-  const totalPayable = useMemo(() => {
-    if (!stats) return 0;
-    return (
-      (Number(stats.totalBilled) || 0) - (Number(stats.totalPayments) || 0)
-    );
-  }, [stats]);
+  // const totalPayable = useMemo(() => {
+  //   if (!stats) return 0;
+  //   return (
+  //     (Number(stats.totalBilled) || 0) - (Number(stats.totalPayments) || 0)
+  //   );
+  // }, [stats]);
 
   /* ================= Safe early return ================= */
 

@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import type { Payment } from "@/types/paymentType";
 import { companyLogos } from "@/assets/companyLogos";
 /* ===============================
