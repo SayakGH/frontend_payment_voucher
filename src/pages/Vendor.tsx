@@ -24,6 +24,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Pencil } from "lucide-react";
+import { updateVendorPanPhone } from "@/api/vendor";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import type {
   CreateVendorPayload,
@@ -53,6 +61,10 @@ export default function Vendors() {
   const [deleteVendorId, setDeleteVendorId] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedOther, setSelectedOther] = useState<Vendor | null>(null);
+  const [editVendor, setEditVendor] = useState<Vendor | null>(null);
+  const [editPan, setEditPan] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const role = localStorage.getItem("role");
 
@@ -166,6 +178,26 @@ export default function Vendors() {
       </div>
     );
   }
+  const handleUpdateVendor = async () => {
+    if (!editVendor) return;
+
+    try {
+      setSaving(true);
+      await updateVendorPanPhone(editVendor._id, {
+        pan: editPan,
+        phone: editPhone,
+      });
+
+      toast.success("Vendor updated");
+
+      setEditVendor(null);
+      fetchVendors();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Update failed");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   /* ================= UI ================= */
 
@@ -257,6 +289,19 @@ export default function Vendors() {
 
                     {/* Actions */}
                     <TableCell className="text-right space-x-2">
+                      {role === "admin" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditVendor(v);
+                            setEditPan(v.pan);
+                            setEditPhone(v.phone);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -315,6 +360,40 @@ export default function Vendors() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!editVendor} onOpenChange={() => setEditVendor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Vendor</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm">PAN</label>
+              <Input
+                value={editPan}
+                onChange={(e) => setEditPan(e.target.value.toUpperCase())}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm">Phone</label>
+              <Input
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+              />
+            </div>
+
+            <Button
+              onClick={handleUpdateVendor}
+              className="w-full"
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Vendor Modal */}
       <AddVendorModal

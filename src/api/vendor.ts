@@ -260,3 +260,21 @@ export const deleteVendorv2 = async (vendorId: string) => {
 
   return res.data;
 };
+export const updateVendorPanPhone = async (
+  vendorId: string,
+  payload: { pan?: string; phone?: string }
+) => {
+  const token = localStorage.getItem("authToken");
+
+  const res = await api.patch(
+    `/vendors/update/pan-phone/${vendorId}`,
+    payload,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};

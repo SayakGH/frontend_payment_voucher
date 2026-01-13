@@ -424,14 +424,16 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                             {formatMoney(b.amount)}
                           </Badge>
 
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeleteBillId(b._id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {role === "Admin" && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteBillId(b._id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -532,14 +534,16 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                           <Download className="h-4 w-4" />
                         </Button>
 
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeletePaymentId(p._id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {role === "Admin" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeletePaymentId(p._id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -577,15 +581,16 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                             >
                               <Download className="h-4 w-4" />
                             </Button>
-
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-destructive hover:bg-destructive/10"
-                              onClick={() => setDeletePaymentId(p._id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {role === "Admin" && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeletePaymentId(p._id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </CardContent>
