@@ -390,7 +390,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                           {formatMoney(b.amount)}
                         </Badge>
 
-                        {role === "Admin" && (
+                        {role === "admin" && (
                           <Button
                             size="icon"
                             variant="ghost"
@@ -424,7 +424,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                             {formatMoney(b.amount)}
                           </Badge>
 
-                          {role === "Admin" && (
+                          {role === "admin" && (
                             <Button
                               size="icon"
                               variant="ghost"
@@ -534,7 +534,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                           <Download className="h-4 w-4" />
                         </Button>
 
-                        {role === "Admin" && (
+                        {role === "admin" && (
                           <Button
                             size="icon"
                             variant="ghost"
@@ -581,7 +581,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                             >
                               <Download className="h-4 w-4" />
                             </Button>
-                            {role === "Admin" && (
+                            {role === "admin" && (
                               <Button
                                 size="icon"
                                 variant="ghost"
