@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { getFinancialData, getSummary } from "@/api/analytics";
 import type { IChart } from "@/types/analyticsTypes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /* ================= TYPES ================= */
 
@@ -54,8 +55,6 @@ export default function Analytics() {
     }
   };
 
-  /* ================= Always run hooks ================= */
-
   const chartData = useMemo(() => {
     return (chartRaw || []).map((d) => ({
       date: `${String(d.day).padStart(2, "0")} ${d.month}`,
@@ -69,15 +68,6 @@ export default function Analytics() {
       : 0;
   }, [chartData]);
 
-  // const totalPayable = useMemo(() => {
-  //   if (!stats) return 0;
-  //   return (
-  //     (Number(stats.totalBilled) || 0) - (Number(stats.totalPayments) || 0)
-  //   );
-  // }, [stats]);
-
-  /* ================= Safe early return ================= */
-
   if (loading) {
     return <div className="p-6 text-muted-foreground">Loading analytics…</div>;
   }
@@ -86,15 +76,14 @@ export default function Analytics() {
     return <div className="p-6 text-destructive">Failed to load analytics</div>;
   }
 
-  /* ================= UI ================= */
-
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Analytics</h1>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* <Metric title="Total Payable" value={totalPayable} color="red" /> */}
+      {/* ================= METRICS ================= */}
+
+      {/* DESKTOP VIEW (grid) */}
+      <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Metric title="Total Paid" value={stats.totalPayments} color="green" />
         <Metric title="Total Billed" value={stats.totalBilled} />
         <Metric
@@ -104,7 +93,39 @@ export default function Analytics() {
         />
       </div>
 
-      {/* Chart */}
+      {/* MOBILE VIEW (TABS) */}
+      <div className="sm:hidden">
+        <Tabs defaultValue="paid">
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="billed">Billed</TabsTrigger>
+            <TabsTrigger value="count">Count</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="paid" className="mt-4">
+            <Metric
+              title="Total Paid"
+              value={stats.totalPayments}
+              color="green"
+            />
+          </TabsContent>
+
+          <TabsContent value="billed" className="mt-4">
+            <Metric title="Total Billed" value={stats.totalBilled} />
+          </TabsContent>
+
+          <TabsContent value="count" className="mt-4">
+            <Metric
+              title="Total Payments"
+              value={stats.totalPaymentCount}
+              isCount
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* ================= CHART ================= */}
+
       <Card>
         <CardHeader>
           <CardTitle>Payments Received (Last 30 Days)</CardTitle>
@@ -164,8 +185,8 @@ function Metric({
           color === "red"
             ? "text-destructive"
             : color === "green"
-            ? "text-green-600"
-            : ""
+              ? "text-green-600"
+              : ""
         }`}
       >
         {isCount ? safe : `₹ ${safe.toLocaleString("en-IN")}`}

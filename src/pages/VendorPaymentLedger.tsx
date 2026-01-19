@@ -75,6 +75,7 @@ export default function VendorPaymentLedger({ vendor, onBack }: Props) {
 
   const [bankName, setBankName] = useState("");
   const [chequeNumber, setChequeNumber] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [openPayment, setOpenPayment] = useState(false);
@@ -110,10 +111,13 @@ export default function VendorPaymentLedger({ vendor, onBack }: Props) {
 
   const loadPayments = async () => {
     try {
+      setLoading(true);
       const res = await getPaymentbyIdv2(vendor._id);
       setPayments(res.payments);
     } catch (err) {
       console.error("Load payments failed", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,7 +127,7 @@ export default function VendorPaymentLedger({ vendor, onBack }: Props) {
   const totalPayments = payments.length;
 
   const validItems = payItems.filter(
-    (i) => i.description.trim() && i.amount > 0
+    (i) => i.description.trim() && i.amount > 0,
   );
 
   const itemsTotal = validItems.reduce((s, i) => s + i.amount, 0);
@@ -177,7 +181,7 @@ export default function VendorPaymentLedger({ vendor, onBack }: Props) {
   const updatePayItem = (
     index: number,
     field: keyof PayItem,
-    value: string | number
+    value: string | number,
   ) => {
     setPayItems((prev) =>
       prev.map((item, i) =>
@@ -186,8 +190,8 @@ export default function VendorPaymentLedger({ vendor, onBack }: Props) {
               ...item,
               [field]: field === "amount" ? Number(value) : String(value),
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -246,12 +250,76 @@ export default function VendorPaymentLedger({ vendor, onBack }: Props) {
             className="w-full"
           />
         </div>
+        {/* ========== MOBILE PAYMENTS VIEW ========== */}
+        <div className="block md:hidden space-y-3 mb-4">
+          {loading ? (
+            <>
+              <PaymentCardSkeleton />
+              <PaymentCardSkeleton />
+              <PaymentCardSkeleton />
+            </>
+          ) : filteredPayments.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground">
+              No payments yet
+            </div>
+          ) : (
+            filteredPayments.map((p) => (
+              <Card key={p._id} className="shadow-sm">
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        ID: {p._id}
+                      </p>
+                      <p className="font-medium">{p.company?.name || "—"}</p>
+                    </div>
+                    <Badge variant="secondary">{formatMoney(p.total)}</Badge>
+                  </div>
 
-        <CardContent>
+                  <p className="text-sm">{formatDateTime(p.createdAt)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Mode: {p.paymentSummary?.mode}
+                  </p>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(`/payment/${p._id}`, "_blank")}
+                    >
+                      Download
+                    </Button>
+
+                    {role === "admin" && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() => setDeletePaymentId(p._id)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <CardContent className="hidden md:block">
           <ScrollArea className="h-[400px]">
             {filteredPayments.length === 0 && (
               <div className="text-center text-sm text-muted-foreground">
                 No payments yet
+              </div>
+            )}
+            {loading && (
+              <div className="space-y-3">
+                <div className="h-12 w-full bg-muted animate-pulse rounded" />
+                <div className="h-12 w-full bg-muted animate-pulse rounded" />
+                <div className="h-12 w-full bg-muted animate-pulse rounded" />
               </div>
             )}
 
@@ -502,5 +570,24 @@ function Summary({ title, value, green }: any) {
         {value}
       </div>
     </div>
+  );
+}
+
+function PaymentCardSkeleton() {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="pt-4 space-y-3">
+        <div className="flex justify-between items-center">
+          <div className="space-y-2">
+            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-6 w-16 bg-muted rounded-full animate-pulse" />
+        </div>
+
+        <div className="h-3 w-40 bg-muted rounded animate-pulse" />
+        <div className="h-8 w-full bg-muted rounded animate-pulse" />
+      </CardContent>
+    </Card>
   );
 }

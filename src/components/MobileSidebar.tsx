@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, BarChart, HandCoins, Users } from "lucide-react";
 import { useGlobal } from "@/context/GlobalContext";
 
 export default function MobileSidebar() {
@@ -30,25 +30,30 @@ export default function MobileSidebar() {
           {role === "admin" && (
             <Button
               variant="ghost"
-              className="w-full justify-start"
+              className="w-full justify-start gap-3"
               onClick={() => handleSelect("analytics")}
             >
+              <BarChart size={20} />
               Analytics
             </Button>
           )}
+
           <Button
             variant="ghost"
-            className="w-full justify-start"
+            className="w-full justify-start gap-3"
             onClick={() => handleSelect("vendor")}
           >
+            <HandCoins size={20} />
             Beneficiaries
           </Button>
+
           {role === "admin" && (
             <Button
               variant="ghost"
-              className="w-full justify-start"
+              className="w-full justify-start gap-3"
               onClick={() => handleSelect("manage")}
             >
+              <Users size={20} />
               Manage Users
             </Button>
           )}

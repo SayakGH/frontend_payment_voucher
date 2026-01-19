@@ -1,52 +1,49 @@
-// src/components/Navbar.tsx
 import MobileSidebar from "./MobileSidebar";
-import { LogOut, User, Shield } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const navigate = useNavigate();
-
-  const role = localStorage.getItem("role"); // "admin" or "user"
+  const userName = localStorage.getItem("userName") || "User";
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
   };
 
-  const isAdmin = role === "admin";
-
   return (
-    <div className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between border-b bg-white px-4">
-      <MobileSidebar />
+    <div className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
+      {/* Left: Mobile Menu */}
+      <div className="flex items-center gap-3">
+        <MobileSidebar />
+      </div>
 
+      {/* Right: User Info + Logout */}
       <div className="flex items-center gap-4">
-        {/* Role Avatar */}
+        {/* User */}
         <div className="flex items-center gap-2">
-          <Avatar
-            className={
-              isAdmin
-                ? "bg-indigo-900 text-white ring-2 ring-indigo-700"
-                : "bg-emerald-900 text-white ring-2 ring-emerald-700"
-            }
-          >
-            <AvatarFallback>
-              {isAdmin ? <Shield size={16} /> : <User size={16} />}
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-indigo-600 text-white text-sm">
+              {userName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
-          <span className="text-sm font-semibold tracking-wide">
-            {isAdmin ? "Admin" : "User"}
+          <span className="hidden sm:block text-sm font-medium text-gray-700">
+            {userName}
           </span>
         </div>
 
         {/* Logout */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleLogout}
-          className="rounded-full p-2 hover:bg-muted transition"
+          className="text-gray-600 hover:text-red-600"
         >
           <LogOut className="h-5 w-5" />
-        </button>
+        </Button>
       </div>
     </div>
   );

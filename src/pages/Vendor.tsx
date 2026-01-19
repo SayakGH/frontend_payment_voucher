@@ -44,6 +44,7 @@ import {
   deleteVendor,
   deleteVendorv2,
 } from "@/api/vendor";
+import { Card, CardContent } from "@/components/ui/card";
 
 type VendorType =
   | "Vendor"
@@ -153,7 +154,7 @@ export default function Vendors() {
   const filteredVendors = vendors.filter((v) =>
     `${v.name} ${v.pan} ${v.gstin || ""}`
       .toLowerCase()
-      .includes(search.toLowerCase())
+      .includes(search.toLowerCase()),
   );
 
   /* ================= Project View ================= */
@@ -222,14 +223,103 @@ export default function Vendors() {
         className="w-full"
       />
 
-      {/* Vendors Table */}
-      <div className="border rounded-xl bg-white shadow-sm overflow-hidden">
+      {/* ================= MOBILE VIEW ================= */}
+      <div className="block md:hidden space-y-3">
+        {loading ? (
+          <div className="space-y-3">
+            <VendorCardSkeleton />
+            <VendorCardSkeleton />
+            <VendorCardSkeleton />
+          </div>
+        ) : filteredVendors.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No vendors found
+          </div>
+        ) : (
+          filteredVendors.map((v) => (
+            <Card key={v._id} className="shadow-sm">
+              <CardContent className="pt-4 space-y-3">
+                {/* Header Row */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center">
+                      {v.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-semibold leading-tight">{v.name}</p>
+                      <p className="text-xs text-muted-foreground">{v.phone}</p>
+                    </div>
+                  </div>
+
+                  {vendorTypeBadge(v.type)}
+                </div>
+
+                {/* Mini Info Row */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">PAN</p>
+                    <p className="font-mono">{v.pan}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground">GSTIN</p>
+                    <p className="font-mono">{v.gstin || "—"}</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={
+                      v.type === "Vendor"
+                        ? () => setSelectedVendor(v)
+                        : () => setSelectedOther(v)
+                    }
+                  >
+                    View
+                  </Button>
+
+                  {role === "admin" && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditVendor(v);
+                          setEditPan(v.pan);
+                          setEditPhone(v.phone);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setDeleteVendorId(v)}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* ================= DESKTOP VIEW ================= */}
+      <div className="hidden md:block border rounded-xl bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <Table className="min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>Vendor</TableHead>
-                <TableHead>Type</TableHead> {/* new */}
+                <TableHead>Type</TableHead>
                 <TableHead className="hidden md:table-cell">Phone</TableHead>
                 <TableHead>PAN</TableHead>
                 <TableHead className="hidden sm:table-cell">GSTIN</TableHead>
@@ -240,14 +330,17 @@ export default function Vendors() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
-                    Loading vendors…
+                  <TableCell colSpan={6} className="py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+                      <div className="h-4 w-40 bg-muted rounded animate-pulse" />
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : filteredVendors.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-10 text-muted-foreground"
                   >
                     No vendors found
@@ -259,8 +352,7 @@ export default function Vendors() {
                     key={v._id}
                     className="hover:bg-muted/40 transition"
                   >
-                    {/* Vendor */}
-                    <TableCell className="flex items-center gap-3">
+                    <TableCell className="flex items-center gap-2 pr-2">
                       <div className="h-9 w-9 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center">
                         {v.name.charAt(0)}
                       </div>
@@ -272,22 +364,19 @@ export default function Vendors() {
                         </p>
                       </div>
                     </TableCell>
+
                     <TableCell>{vendorTypeBadge(v.type)}</TableCell>
 
-                    {/* Phone */}
                     <TableCell className="hidden md:table-cell">
                       {v.phone}
                     </TableCell>
 
-                    {/* PAN */}
                     <TableCell className="font-mono text-sm">{v.pan}</TableCell>
 
-                    {/* GSTIN */}
                     <TableCell className="hidden sm:table-cell font-mono text-sm">
                       {v.gstin || "—"}
                     </TableCell>
 
-                    {/* Actions */}
                     <TableCell className="text-right space-x-2">
                       {role === "admin" && (
                         <Button
@@ -302,6 +391,7 @@ export default function Vendors() {
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
+
                       <Button
                         size="sm"
                         variant="outline"
@@ -402,5 +492,41 @@ export default function Vendors() {
         onCreate={handleCreateVendor}
       />
     </div>
+  );
+}
+
+function VendorCardSkeleton() {
+  return (
+    <Card className="shadow-sm">
+      <CardContent className="pt-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-1">
+              <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="h-6 w-16 bg-muted rounded-full animate-pulse" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <div className="h-3 w-10 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <div className="h-3 w-10 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-2">
+          <div className="h-9 flex-1 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-9 bg-muted rounded animate-pulse" />
+          <div className="h-9 w-9 bg-muted rounded animate-pulse" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
