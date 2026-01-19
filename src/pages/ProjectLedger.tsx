@@ -111,7 +111,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
       formatDateTime(p.createdAt).includes(paymentSearch) ||
       (p.paymentSummary?.mode || "")
         .toLowerCase()
-        .includes(paymentSearch.toLowerCase())
+        .includes(paymentSearch.toLowerCase()),
   );
 
   /* ================= Totals ================= */
@@ -122,7 +122,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
   const estimated = project.estimated;
 
   const validItems = payItems.filter(
-    (i) => i.description.trim() && i.amount > 0
+    (i) => i.description.trim() && i.amount > 0,
   );
 
   const itemsTotal = validItems.reduce((s, i) => s + i.amount, 0);
@@ -208,7 +208,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
   const updatePayItem = (
     index: number,
     field: keyof PayItem,
-    value: string | number
+    value: string | number,
   ) => {
     setPayItems((prev) =>
       prev.map((item, i) =>
@@ -217,8 +217,8 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
               ...item,
               [field]: field === "amount" ? Number(value) : String(value),
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -334,11 +334,42 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* ========== SUMMARY — DESKTOP GRID + MOBILE TABS ========== */}
+
+      {/* DESKTOP VIEW */}
+      <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-4">
         <Summary title="Billed" value={formatMoney(billed)} />
         <Summary title="Paid" value={formatMoney(paid)} green />
         <Summary title="Balance" value={formatMoney(balance)} danger />
         <Summary title="Expected Price" value={formatMoneyy(estimated)} />
+      </div>
+
+      {/* MOBILE VIEW — TABBED SUMMARY */}
+      <div className="sm:hidden">
+        <Tabs defaultValue="billed">
+          <TabsList className="grid grid-cols-4 w-full mb-3">
+            <TabsTrigger value="billed">Billed</TabsTrigger>
+            <TabsTrigger value="paid">Paid</TabsTrigger>
+            <TabsTrigger value="balance">Balance</TabsTrigger>
+            <TabsTrigger value="expected">Expected</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="billed">
+            <Summary title="Billed" value={formatMoney(billed)} />
+          </TabsContent>
+
+          <TabsContent value="paid">
+            <Summary title="Paid" value={formatMoney(paid)} green />
+          </TabsContent>
+
+          <TabsContent value="balance">
+            <Summary title="Balance" value={formatMoney(balance)} danger />
+          </TabsContent>
+
+          <TabsContent value="expected">
+            <Summary title="Expected Price" value={formatMoneyy(estimated)} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Tabs defaultValue="bills" className="w-full">
@@ -527,7 +558,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                             window.open(
                               `/payment/${p._id}`,
                               "_blank",
-                              "noopener,noreferrer"
+                              "noopener,noreferrer",
                             );
                           }}
                         >
@@ -575,7 +606,7 @@ export default function ProjectLedger({ vendor, project, onBack }: Props) {
                                 window.open(
                                   `/payment/${p._id}`,
                                   "_blank",
-                                  "noopener,noreferrer"
+                                  "noopener,noreferrer",
                                 )
                               }
                             >
